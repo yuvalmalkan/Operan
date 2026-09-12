@@ -1,11 +1,12 @@
 import subprocess
 import logging
 import platform
+import Constants
 
 class Command:
 
     @staticmethod
-    def execute(command_list: list[str], timeout: int = 10) -> dict:
+    def execute(command_list: list[str], timeout: int = Constants.DEFAULT_COMMAND_TIMEOUT) -> dict:
         logging.info(f"Executing command: {' '.join(command_list)}")
         
         try:
@@ -57,7 +58,6 @@ class Command:
             return False
             
         try:
-            # Popen ensures the command runs in the background without blocking the Python script
             subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             logging.info(f"Command sent to open application '{app_name}'.")
             return True

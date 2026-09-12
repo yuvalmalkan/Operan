@@ -2,13 +2,13 @@ import pyautogui
 import logging
 import mss
 import mss.tools
+import Constants
 
 class Screen:
     _scale_factor = None
 
     @classmethod
     def get_scale_factor(cls) -> int:
-        # Use cached value if already computed
         if cls._scale_factor is not None:
             return cls._scale_factor
 
@@ -33,7 +33,7 @@ class Screen:
         return x, y
 
     @staticmethod
-    def take_screenshot(output_filename: str = "current_screen.png") -> str:
+    def take_screenshot(output_filename: str = Constants.DEFAULT_SCREENSHOT_NAME) -> str:
         try:
             with mss.MSS() as sct:
                 monitor = sct.monitors[1]

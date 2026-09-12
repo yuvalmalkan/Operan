@@ -1,9 +1,9 @@
 import pyautogui
 import logging
 from functools import wraps
+import Constants
 
 def failsafe_handler(func):
-    """Decorator to handle pyautogui FailSafeException"""
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -17,7 +17,7 @@ class Mouse:
         logging.info("Mouse controller initialized.")
 
     @failsafe_handler
-    def move(self, x: int, y: int, duration: float = 0.5):
+    def move(self, x: int, y: int, duration: float = Constants.DEFAULT_MOUSE_DURATION):
         pyautogui.moveTo(x, y, duration=duration)
         logging.info(f"Mouse successfully moved to ({x}, {y}).")
 
@@ -27,6 +27,6 @@ class Mouse:
         logging.info(f"Performed single '{button}' click.")
 
     @failsafe_handler
-    def double_click(self, button: str = 'left', interval: float = 0.1):
+    def double_click(self, button: str = 'left', interval: float = Constants.DEFAULT_DOUBLE_CLICK_INTERVAL):
         pyautogui.click(button=button, clicks=2, interval=interval)
         logging.info(f"Performed double '{button}' click.")
