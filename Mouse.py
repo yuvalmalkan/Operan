@@ -10,6 +10,7 @@ def failsafe_handler(func):
             return func(*args, **kwargs)
         except pyautogui.FailSafeException:
             logging.error(f"Failsafe triggered during '{func.__name__}'! Mouse moved to a corner. Aborting action.")
+            raise
     return wrapper
 
 class Mouse:

@@ -1,6 +1,5 @@
 import logging
 import pyautogui
-import time
 from Command import Command
 from Mouse import Mouse
 from Screen import Screen
@@ -20,9 +19,6 @@ def main():
     if not success:
         logging.error(f"Failed to open '{Constants.TARGET_APP_NAME}'. Exiting.")
         return
-
-    logging.info("Waiting for the application to load...")
-    time.sleep(Constants.DEFAULT_WAIT_TIME_APP_LOAD)
 
     screenshot_path = Screen.take_screenshot()
     if screenshot_path:
