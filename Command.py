@@ -1,9 +1,12 @@
 import subprocess
 import logging
+import platform
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 class Command:
+
+
 
 
     def execute(self, command_list: list[str], timeout: int = 10) -> dict:
@@ -13,12 +16,9 @@ class Command:
         :param command_list: A list of the command parts (e.g., ["open", "-a", "Calculator"])
         :param timeout: Maximum seconds to wait before the command times out
         :return: A dictionary containing the success status, output (stdout), and errors (stderr)
-
         """
-
         logging.info(f"Executing command: {' '.join(command_list)}")
         
-
         try:
             # Using 'run' executes the command and waits for it to finish
             # capture_output=True captures the returned text (important so the Agent can read it)
@@ -33,11 +33,9 @@ class Command:
             
             is_success = result.returncode == 0
             
-
             if not is_success:
                 logging.warning(f"Command failed with code {result.returncode}")
                 
-
             return {
                 "success": is_success,
                 "stdout": result.stdout.strip(),
@@ -61,12 +59,23 @@ class Command:
 
 
 
+
     def open_application(self, app_name: str) -> bool:
         """
-        A specific helper function for opening applications in macOS.
+        A cross-platform helper function for opening applications.
         """
-        # On Mac, the "open -a" command opens applications by name
-        result = self.execute(["open", "-a", app_name])
+        os_name = platform.system()
+        
+        if os_name == "Darwin": # macOS
+            result = self.execute(["open", "-a", app_name])
+        elif os_name == "Windows":
+            # Using cmd to run the 'start' built-in command
+            result = self.execute(["cmd.exe", "/c", "start", app_name])
+        elif os_name == "Linux":
+            result = self.execute([app_name])
+        else:
+            return False
+            
         return result["success"]
 
 
@@ -78,32 +87,50 @@ class Command:
 
 if __name__ == "__main__":
     commander = Command()
+    current_os = platform.system()
     
-    # Example 1: A command that returns text (e.g., checking the macOS version)
+    # Example 1: A command that returns text (Dynamic based on OS)
     print("\n--- Example 1: Read System Info ---")
-    info_result = commander.execute(["sw_vers"])
+    if current_os == "Darwin":
+        info_command = ["sw_vers"]
+    elif current_os == "Windows":
+        info_command = ["cmd.exe", "/c", "ver"]
+    else:
+        info_command = ["uname", "-a"]
+        
+    info_result = commander.execute(info_command)
     if info_result["success"]:
         print(f"System Info:\n{info_result['stdout']}")
         
     # Example 2: A command expected to fail (attempting to run a non-existent command)
     print("\n--- Example 2: Handle Errors ---")
-    error_result = commander.execute(["ls", "/folder_that_does_not_exist"])
+    if current_os == "Windows":
+        error_result = commander.execute(["cmd.exe", "/c", "dir", "C:\\folder_that_does_not_exist"])
+    else:
+        error_result = commander.execute(["ls", "/folder_that_does_not_exist"])
+        
     if not error_result["success"]:
         print(f"Caught expected error: {error_result['stderr']}")
         
-    # Example 3: Opening applications (the foundation for our Agent)
+    # Example 3: Opening applications
     print("\n--- Example 3: Open Applications ---")
-    
-    # Let's try to open the built-in Mac calculator
-    calc_opened = commander.open_application("Calculator")
+    if current_os == "Windows":
+        calc_opened = commander.open_application("calc.exe")
+    elif current_os == "Darwin":
+        calc_opened = commander.open_application("Calculator")
+    else:
+        calc_opened = commander.open_application("gnome-calculator")
+        
     print(f"Calculator opened: {calc_opened}")
     
     # Let's try to open a non-existent application to see how it behaves
     fake_app_opened = commander.open_application("AppThatDoesNotExist123")
     print(f"Fake App opened: {fake_app_opened}")
 
-    print (" ")
-    print (" ")
-    print (" ")
-    print(commander.execute(['ls','-la'])['stdout'])
-
+    print("\n\n\n")
+    
+    # Example 4: List directory content
+    if current_os == "Windows":
+        print(commander.execute(['cmd.exe', '/c', 'dir'])['stdout'])
+    else:
+        print(commander.execute(['ls', '-la'])['stdout'])
