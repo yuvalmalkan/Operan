@@ -1,17 +1,13 @@
 import logging
 import subprocess
 import time
-
 import Constants
 
-
 class Command:
+
     @staticmethod
-    def execute(
-        command_list: list[str],
-        timeout: int = Constants.DEFAULT_COMMAND_TIMEOUT,
-    ) -> dict:
-        logging.info("Executing command: %s", " ".join(command_list))
+    def execute(command_list: list[str], timeout: int = Constants.DEFAULT_COMMAND_TIMEOUT) -> dict:
+        logging.info(f"Executing command: {' '.join(command_list)}")
 
         try:
             result = subprocess.run(
@@ -21,88 +17,71 @@ class Command:
                 timeout=timeout,
                 check=False,
             )
+
+            is_success = result.returncode == 0
+            if not is_success:
+                logging.warning(f"Command failed with code {result.returncode}")
+
+            return {
+                "success": is_success,
+                "stdout": result.stdout.strip(),
+                "stderr": result.stderr.strip(),
+                "return_code": result.returncode,
+            }
+
         except subprocess.TimeoutExpired:
-            logging.error("Command timed out after %s seconds.", timeout)
+            logging.error(f"Command timed out after {timeout} seconds.")
+            
             return {
                 "success": False,
                 "stdout": "",
                 "stderr": "Timeout expired",
                 "return_code": -1,
             }
+
         except FileNotFoundError:
-            logging.error("Command not found: %s", command_list[0])
+            logging.error(f"Command not found: {command_list[0]}")
             return {
                 "success": False,
                 "stdout": "",
                 "stderr": "Command executable not found",
                 "return_code": -2,
             }
+        
 
-        is_success = result.returncode == 0
-        if not is_success:
-            logging.warning("Command failed with code %s", result.returncode)
-
-        return {
-            "success": is_success,
-            "stdout": result.stdout.strip(),
-            "stderr": result.stderr.strip(),
-            "return_code": result.returncode,
-        }
 
     @staticmethod
     def open_application(app_name: str) -> bool:
-        try:
-            launcher = subprocess.Popen(
-                ["open", "-a", app_name],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            try:
-                launcher_return_code = launcher.wait(
-                    timeout=Constants.DEFAULT_LAUNCHER_CHECK_TIMEOUT
-                )
-                if launcher_return_code != 0:
-                    launcher_error = (
-                        launcher.stderr.read().strip() if launcher.stderr else ""
-                    )
-                    logging.error(
-                        "macOS application launcher exited with code %s: %s",
-                        launcher_return_code,
-                        launcher_error,
-                    )
-                    return False
-            except subprocess.TimeoutExpired:
-                pass
-
-            if not Command._wait_for_application_ready(app_name):
-                logging.error(
-                    "macOS application '%s' did not become ready in time.",
-                    app_name,
-                )
-                return False
-
-            logging.info("macOS application '%s' is ready.", app_name)
-            return True
-        except OSError as error:
-            logging.error("Failed to open macOS application '%s': %s", app_name, error)
+        result = subprocess.run(
+            ["open", "-a", app_name],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        
+        if result.returncode != 0:
+            logging.error(f"Failed to open '{app_name}': {result.stderr.strip()}")
             return False
 
-    @staticmethod
-    def _wait_for_application_ready(process_name: str) -> bool:
+        #applescript check
         deadline = time.time() + Constants.DEFAULT_APP_READY_TIMEOUT
-        while time.time() < deadline:
-            if Command._is_application_running(process_name):
-                return True
-            time.sleep(Constants.DEFAULT_APP_READY_CHECK_INTERVAL)
-        return False
+        check_script = f'application "{app_name}" is running'
+        
 
-    @staticmethod
-    def _is_application_running(process_name: str) -> bool:
-        result = subprocess.run(
-            ["pgrep", "-f", process_name],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
-        return result.returncode == 0
+        while time.time() < deadline:
+            check_result = subprocess.run(
+                ["osascript", "-e", check_script],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            
+            
+            if "true" in check_result.stdout.strip().lower():
+                logging.info(f"macOS application '{app_name}' is ready.")
+                return True
+            
+            time.sleep(Constants.DEFAULT_APP_READY_CHECK_INTERVAL)
+
+        logging.error(f"macOS application '{app_name}' did not become ready in time.")
+        return False
