@@ -1,7 +1,5 @@
 import logging
-
 import pyautogui
-
 from Command import Command
 from Mouse import Mouse
 from Screen import Screen
@@ -17,7 +15,7 @@ pyautogui.FAILSAFE = True
 
 
 def main():
-    logging.info("Starting macOS automation process...")
+    logging.info("Starting automation process...")
 
     if not Command.open_application(Constants.TARGET_APP_NAME):
         logging.error("Failed to open '%s'. Exiting.", Constants.TARGET_APP_NAME)
@@ -37,7 +35,7 @@ def main():
     mouse = Mouse()
     mouse.move(x, y)
     mouse.click()
-    logging.info("macOS automation process completed successfully.")
+    logging.info("automation process completed successfully.")
 
 
 if __name__ == "__main__":
