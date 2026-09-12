@@ -6,9 +6,6 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 class Command:
 
-
-
-
     def execute(self, command_list: list[str], timeout: int = 10) -> dict:
         """
         Executes a system command and returns a dictionary with the results.
