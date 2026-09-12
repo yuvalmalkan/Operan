@@ -1,65 +1,85 @@
 import pyautogui
+import logging
 import time
+from Screen import Screen
 
-# Failsafe mechanism: Move the mouse to any corner of the screen to abort execution
-pyautogui.FAILSAFE = True
-
-def move_mouse(x, y, duration=0.5):
-    """
-    Moves the mouse cursor to the specified (x, y) coordinates on the screen.
-    
-    Args:
-        x (int): The x-coordinate target.
-        y (int): The y-coordinate target.
-        duration (float): The time in seconds it takes to move the mouse. 
-                          Setting this > 0 helps the movement look human-like.
-    """
-    try:
-        # Move the mouse smoothly to the target
-        pyautogui.moveTo(x, y, duration=duration)
-        print(f"Mouse successfully moved to ({x}, {y}).")
-
-    except pyautogui.FailSafeException:
-        print("Failsafe triggered! Mouse moved to a corner. Aborting movement.")
-
-def click_mouse(button='left', clicks=1, interval=0.1):
-    """
-    Performs a mouse click at the current cursor location.
-    
-    Args:
-        button (str): The mouse button to click ('left', 'middle', or 'right').
-        clicks (int): Number of clicks to perform (1 for single click, 2 for double).
-        interval (float): Time in seconds between clicks if clicks > 1.
-    """
-    try:
-        # Perform the click action
-        pyautogui.click(button=button, clicks=clicks, interval=interval)
-        print(f"Performed {clicks} '{button}' click(s) at current location.")
-
-
-    except pyautogui.FailSafeException:
-        print("Failsafe triggered! Mouse moved to a corner. Aborting click.")
+class Mouse:
+    def __init__(self, failsafe=True):
+        """
+        Initializes the Mouse controller.
+        
+        Args:
+            failsafe (bool): If True, moving the mouse to a screen corner aborts execution.
+        """
+        pyautogui.FAILSAFE = failsafe
+        logging.info(f"Mouse controller initialized. Failsafe enabled: {failsafe}")
 
 
 
+    def move(self, x, y, duration=0.5):
+        """
+        Moves the mouse cursor to the specified logical (x, y) coordinates.
+        """
+        try:
+            pyautogui.moveTo(x, y, duration=duration)
+            logging.info(f"Mouse successfully moved to ({x}, {y}).")
+        except pyautogui.FailSafeException:
+            logging.error("Failsafe triggered! Mouse moved to a corner. Aborting movement.")
+
+
+
+    def click(self, button='left'):
+        """
+        Performs a single mouse click at the current cursor location.
+        """
+        try:
+            pyautogui.click(button=button, clicks=1)
+            logging.info(f"Performed single '{button}' click.")
+        except pyautogui.FailSafeException:
+            logging.error("Failsafe triggered! Mouse moved to a corner. Aborting click.")
+
+
+
+    def double_click(self, button='left', interval=0.1):
+        """
+        Performs a double mouse click at the current cursor location.
+        
+        Args:
+            button (str): The mouse button to click ('left', 'middle', 'right').
+            interval (float): Time in seconds between the two clicks.
+        """
+        try:
+            pyautogui.click(button=button, clicks=2, interval=interval)
+            logging.info(f"Performed double '{button}' click.")
+        except pyautogui.FailSafeException:
+            logging.error("Failsafe triggered! Mouse moved to a corner. Aborting double click.")
+
+
+
+
+
+# Example usage/testing block
 if __name__ == "__main__":
-    # Short delay to allow you to switch windows before the script runs
-    print("Starting in 3 seconds...")
+    # Configure logging for the test run
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    
+    logging.info("Starting test in 3 seconds...")
     time.sleep(3)
     
-    # Get the current screen resolution
-    screen_width, screen_height = pyautogui.size()
-    print(f"Screen resolution detected: {screen_width}x{screen_height}")
+    # Initialize the Mouse controller
+    mouse_controller = Mouse()
     
-    # Define a target coordinate (e.g., the center of the screen)
-    target_x = screen_width // 2
-    target_y = screen_height // 2
+    # Use the Screen class to handle resolution scaling
+    current_scale = Screen.get_scale_factor()
     
-    # 1. AI decides to move the mouse
-    move_mouse(target_x, target_y)
+    # Mock AI target pixels
+    ai_vision_x, ai_vision_y = 1000, 800
     
-    # Short pause to simulate human reaction time between moving and clicking
+    # Adjust and execute
+    target_x, target_y = Screen.adjust_coordinates(ai_vision_x, ai_vision_y, current_scale)
+    
+    mouse_controller.move(target_x, target_y, duration=0.8)
     time.sleep(0.2)
     
-    # 2. AI decides to click
-    click_mouse(button='left')
+    # Test the new double click
+    mouse_controller.double_click(button='left')
