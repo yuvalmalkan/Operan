@@ -1,8 +1,8 @@
 import logging
 import pyautogui
-from Command import Command
-from Mouse import Mouse
-from Screen import Screen
+from utilities.Command import Command
+from utilities.Mouse import Mouse
+from utilities.Screen import Screen
 import Constants
 
 

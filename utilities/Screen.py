@@ -1,9 +1,7 @@
 import logging
-
 import mss
 import mss.tools
 import pyautogui
-
 import Constants
 
 
