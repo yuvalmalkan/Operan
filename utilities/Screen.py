@@ -1,8 +1,11 @@
 import logging
 import mss
-import mss.tools
 import pyautogui
 import Constants
+import base64
+import io
+from PIL import Image
+
 
 
 class Screen:
@@ -36,21 +39,24 @@ class Screen:
 
 
     @staticmethod
-    def take_screenshot(output_filename: str = Constants.DEFAULT_SCREENSHOT_NAME) -> str:
+    def GetCurrentScreen() -> str:
+        #get current screen as base64
         try:
             with mss.mss() as screenshot:
                 monitor = screenshot.monitors[1]
                 captured_screen = screenshot.grab(monitor)
+                
+                img = Image.frombytes("RGB", captured_screen.size, captured_screen.bgra, "raw", "BGRX")
+            
+                buffer = io.BytesIO()
+                img.save(buffer, format="PNG")
 
-                mss.tools.to_png(
-                    captured_screen.rgb,
-                    captured_screen.size,
-                    output=output_filename,
-                )
+                base64_encoded = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                
+                logging.info("Screenshot successfully captured to memory as Base64")
 
-            logging.info("Screenshot successfully saved to: %s", output_filename)
-            return output_filename
-        
-        except OSError as error:
-            logging.error("Failed to capture the macOS screen: %s", error)
+                return base64_encoded
+                
+        except Exception as error:
+            logging.error(f"Failed to capture screen to memory: {error}")
             return ""
